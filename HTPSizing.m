@@ -1,20 +1,20 @@
-function [Shtp] = HTPSizing(plotscissor, MAC, h0, a, ahtpC, Clmax, lhtp, deda, Cm0, xNLG, xMLG, hNLG, hMLG, Ct, zt, rho, Vmc, S, MTOW, cgRange, CltMin)
+function [Shtp] = HTPSizing(plotscissor, data)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-knMin = 0.05; % minimum static margin stick fixed
-Xcg = [12:0.1:14.5]; % range of cg positions. m
-h = Xcg/MAC; % range of non dimentional cg locations.
-q = 0.5*rho*(Vmc*1.05)^2; % Dynamic Pressure at 1.05*Vmc
+knMin = 0.05;
+
+Xcg = [data('XcgFWD')-1:0.1:data('XcgAFT')+1]; %To use after implementing data base
+h = Xcg/data('MAC'); % range of non dimentional cg locations.
 
 %Finding St/S ratios based on key criteria for flight
-SRatioKn = ((knMin-h0+h)*MAC*a)/(lhtp*ahtpC*(1-deda)); % St/S ratio based on KnMin
-SRatioLand = ((Cm0-(h0-h)*Clmax)*MAC)/(lhtp*CltMin); % St/S ratio based on Landing Cltmin
-SRatioTO = ((Cm0+(h0-h)*Clmax)+Ct*(zt/MAC)-((((MTOW*9.81)/(q*S))-Clmax)*(hMLG-h)))./((-CltMin*(hMLG-h))-(CltMin*(-(h0-h)+(lhtp/MAC)))); % St/S ratio based on TO Rotation
+SRatioKn = ((data('knMin')-data('h0')+h)*data('MAC')*data('a'))/(data('lhtp')*data('ahtpC')*(1-data('deda'))); % St/S ratio based on KnMin
+SRatioLand = ((data('Cm0')-(data('h0')-h)*data('ClmaxL'))*data('MAC'))/(data('lhtp')*data('CltMin')); % St/S ratio based on Landing Cltmin
+SRatioTO = ((data('Cm0')+(data('h0')-h)*data('ClmaxL'))+data('Ct')*(data('zt')/data('MAC'))-((((data('MTOW')*9.81)/(data('q')*data('S')))-data('ClmaxL'))*(data('hMLG')-h)))./((-data('CltMin')*(data('hMLG')-h))-(data('CltMin')*(-(data('h0')-h)+(data('lhtp')/data('MAC'))))); % St/S ratio based on TO Rotation
 
 %Rear CG limit due to 2.5% weight on nose wheel
-xCGAftNLG=((39*xMLG)+xNLG)/40; % Aff CG limit due to the 2.5% weight requirment on nose wheel
-hAftNLG = xCGAftNLG/MAC;
+xCGAftNLG =((39*data('xMLG'))+data('xNLG'))/40; % Aff CG limit due to the 2.5% weight requirment on nose wheel
+hAftNLG = xCGAftNLG/data('MAC');
 
 %Data to plot CG limit due to nose wheel weight
 hAftNLGR = [hAftNLG hAftNLG];
@@ -29,9 +29,9 @@ StSAftNLG = [StSAftNLGMin StSAftNLGMax];
 coefficients = polyfit(h, SRatioTO, 1);
 m = coefficients(1); % gradient of most important fwd limit on scissor plot
 c = coefficients(2); % y intercept of most important fwd limit on scissor plot
-y = ((hAftNLG-cgRange)*m)+c;
+y = ((hAftNLG-(data('cgAFTMAC')-data('cgFWDMAC')))*m)+c;
 aa = (y-c)/m; % X position of horizontal cg line meeting fwd limit
-Shtp = y*S; % Calculated Tailplane area
+Shtp = y*data('S'); % Calculated Tailplane area
 
 % Plotting Scissor Plot
 if plotscissor == 1
@@ -57,9 +57,9 @@ if plotscissor == 1
     plot(hAftNLGR, StSAftNLG, '-', 'LineWidth',1.5); % Plotting limiting lime to to min weight on NLG
     plot([aa hAftNLG], [y y], 'LineWidth',1.5); % Plot horizontal line indicating the specified CG range
     legend('Kn', 'Landing', 'Take Off', 'Nose Landing Gear','Location','southwest');
-    x1 = aa+cgRange/2; % X Postition of text1
+    x1 = aa+(data('cgAFTMAC')-data('cgFWDMAC'))/2; % X Postition of text1
     y1 = y+.015; % Y position of text1
-    txt1 = ['CG Range = ' num2str(cgRange)];
+    txt1 = ['CG Range = ' num2str(data('cgAFTMAC')-data('cgFWDMAC'))];
     text(x1,y1,txt1, 'HorizontalAlignment','center')
     xlabel('h')
     ylabel('St/s')
